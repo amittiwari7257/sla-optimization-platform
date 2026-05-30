@@ -787,6 +787,34 @@ def process_sla(task, selected_date, guid=None):
 
 
 # =========================
+# CUSTOM CSS FOR TABLE STYLING
+# =========================
+def get_styled_dataframe(df):
+    """Apply custom styling to dataframe with dark blue header"""
+    return df.style.set_properties(**{
+        'text-align': 'center'
+    }).set_table_styles([
+        {
+            'selector': 'th',
+            'props': [
+                ('background-color', '#1f4788'),
+                ('color', '#ffffff'),
+                ('font-weight', 'bold'),
+                ('padding', '12px'),
+                ('border', '1px solid #ddd')
+            ]
+        },
+        {
+            'selector': 'td',
+            'props': [
+                ('padding', '10px'),
+                ('border', '1px solid #ddd')
+            ]
+        }
+    ])
+
+
+# =========================
 # UI
 # =========================
 st.set_page_config(page_title="SLA Tool", layout="wide")
@@ -821,7 +849,6 @@ with col3:
         fetched_guid = fetch_auto_guid(task, selected_date)
         if fetched_guid:
             st.session_state["auto_guid"] = fetched_guid
-            st.success(f"GUID fetched: {fetched_guid}")
         else:
             st.warning("No GUID found for this date and task")
 
@@ -857,12 +884,18 @@ if preview:
         # GUID needed for TC-11, TC-12, TC-18
         if not guid:
             st.error("Please fetch or enter a GUID for this test case")
+            df = None
         else:
             df = run_sla_query(task, selected_date, guid)
     
-    if not df.empty:
-        st.dataframe(df)
-    else:
+    if df is not None and not df.empty:
+        st.write("### SLA Output")
+        st.dataframe(
+            df,
+            use_container_width=True,
+            hide_index=True,
+        )
+    elif df is not None:
         st.warning("No data found for the selected criteria")
 
 
@@ -890,11 +923,21 @@ if execute:
 
 
 # =========================
-# RESULT
+# RESULT (TABULAR FORMAT)
 # =========================
 if st.session_state.get("execution_result"):
     st.success("Execution Completed (NOT committed yet)")
-    st.write(st.session_state["execution_result"])
+    
+    # Convert result dictionary to dataframe for tabular display
+    result_data = st.session_state["execution_result"]
+    result_df = pd.DataFrame([result_data])
+    
+    st.write("### Execution Result")
+    st.dataframe(
+        result_df,
+        use_container_width=True,
+        hide_index=True,
+    )
 
 
 # =========================
